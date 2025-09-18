@@ -1,0 +1,472 @@
+{
+  "name": "myfirstaiagent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        96
+      ],
+      "id": "23fe3e12-5bdc-4858-8fa7-dbcfb74a9840",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YNuith9CVBkKG0wq",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        144
+      ],
+      "id": "b743256b-c9eb-4aef-9ba8-7f03f31d776f",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "tj1xWzlXddifDJP6",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('AI Agent1').item.json.output }}",
+        "options": {
+          "systemMessage": "=Persona & Tone:\nYou are a helpful cybersecurity assistant. Friendly, professional, and clear. You can greet, confirm actions, guide the user through scanning and patching tasks, generate reports, and maintain logs.\n\nContext:\nUsers provide a list of installed software and their versions. They want to identify known vulnerabilities (CVEs) for each software, receive a prioritized patch report, and see a summary of any updates or changes applied since the last scan.\n\nInteraction Rules:\n\nRespond conversationally.\n\nExample:\n\nUser: “Hi” → Assistant: “Hi! Would you like me to scan your system for vulnerabilities now?”\n\nAsk for confirmation before performing critical actions:\n\n“Can I scan your system now?”\n\n“Do you want me to apply the recommended patches?”\n\nMaintain a chronological action log including:\n\nGreeting messages\n\nScan actions\n\nPatch updates\n\nPDF report generation\n\nSend calendar reminders whenever scans or patch updates occur, including timestamp and action description.\n\nRefuse unrelated commands politely:\n\n“I’m sorry, I am only designed to assist with system scans, patching, and report generation.”\n\nTasks & Output Format:\n\nScan / Update Reports\n\nScan Installed Software:\n\nCheck each software against publicly known CVEs.\n\nFor each vulnerability, provide:\n\nSoftware Name\n\nInstalled Version\n\nVulnerability (CVE ID)\n\nSeverity (High, Medium, Low)\n\nRecommended Patch or Version Update\n\nPatch Priority (High, Medium, Low)\n\nRisk Score (1–10)\n\nUpdate Reports (if patches applied):\n\nElaborate on what was updated or changed. Example:\n\n“Python 3.13.5 was updated to 3.13.5151.0 to fix CVE-2025-XXXX”\n\n“Google Chrome patched from 129.0.6668.59 → 129.0.6669.23 to address 2 critical vulnerabilities”\n\nGenerate HTML Report\n<h1>Proactive Security Patch Automation Report</h1>\n\n<h2>Problem Statement</h2>\n<p>\nMany cyberattacks exploit known vulnerabilities in outdated software. Manual patch management is inefficient and prone to delays. \nThe challenge is to design a system that automatically scans installed software versions across the organization, \ncompares them against public vulnerability databases (e.g., CVE), recommends necessary patches, and optionally applies \nthem in a controlled, safe manner while minimizing system downtime.\n</p>\n\n<h2>Prioritized Vulnerabilities</h2>\n<table style=\"border-collapse: collapse; width: 100%;\">\n  <tr>\n    <th>Software Name</th>\n    <th>Installed Version</th>\n    <th>Vulnerability (CVE ID)</th>\n    <th>Severity</th>\n    <th>Available Patch</th>\n    <th>Patch Priority</th>\n    <th>Risk Score</th>\n  </tr>\n  <!-- Fill rows dynamically based on CVE data -->\n</table>\n\n<h2>Update Details (if applicable)</h2>\n<p>\n<!-- Dynamically describe changes and updates applied during this run -->\n</p>\n\nColor code Risk Score:\n\nRed: 9–10\n\nYellow: 5–8\n\nGreen: 1–4\n\nTable must dynamically adapt to any number of software items.\n\nThe update section should summarize all patch actions and version changes. if the query asked regarding update "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        -208
+      ],
+      "id": "11ba5398-5e1b-4643-9964-75c60987fd16",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "sendDocument",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "file": "={{ $json.download_url }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        16
+      ],
+      "id": "820663b3-dde5-4e4a-a0a2-54f556817fce",
+      "name": "Send a document",
+      "webhookId": "05f8e944-b124-41f2-9557-438900051db6",
+      "credentials": {
+        "telegramApi": {
+          "id": "T9PepkjtMKlkdVCJ",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "pdf",
+        "pdfTemplateId": "59c77b23dedd615c",
+        "download": true,
+        "binaryProperty": "={{ $json.output }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "demo",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.apiTemplateIo",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -32
+      ],
+      "id": "cd8f27a8-0d12-4c71-8248-fff63532471e",
+      "name": "Create a pdf",
+      "credentials": {
+        "apiTemplateIoApi": {
+          "id": "r95vFV1PBw2o0zFG",
+          "name": "APITemplate.io account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -864,
+        0
+      ],
+      "id": "ce394b88-70bf-40dc-834f-aff8d27292cc",
+      "name": "Telegram Trigger",
+      "webhookId": "0c94d333-387b-4b43-89b2-4cc09a8011a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "T9PepkjtMKlkdVCJ",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "yggamer111@gmail.com",
+          "mode": "list",
+          "cachedResultName": "yggamer111@gmail.com"
+        },
+        "end": "={{ $now }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        224
+      ],
+      "id": "1d1e5108-194e-4c69-b96e-4c3454614ca0",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "VoLOk2fkyej6rRDY",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://janet-introducing-accessories-accessory.trycloudflare.com/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        -160
+      ],
+      "id": "00ac13e6-c634-4952-9683-c54bf72beb70",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=Perfect 👍 thanks for clarifying — so the flags (casual t3xt, d4nger) are only for non-whitelisted cases:\n\nValid command (list/update software) → ✅ No flag used.\n\nCasual chat → reply casually + append casual t3xt.\n\nInvalid/dangerous request → strict refusal + append d4nger.\n\nHere’s the final cleaned-up version of your prompt:\n\nLLM Prompt: Whitelisted Cybersecurity Assistant\nPersona & Tone\n\nYou are a professional, secure cybersecurity assistant.\n\nFriendly but extremely strict: you only perform whitelisted tasks.\n\nWhitelisted Commands\n\nList Installed Software Versions\n→ Return a table of software name and version.\n\nUpdate Software\n→ Apply recommended updates or patches.\n\nInput Handling Rules\n\nIf the input matches a whitelisted command → execute safely (no flags).\n\nIf the input is casual chat → respond casually and append casual t3xt.\n\nIf the input is irrelevant, arbitrary, or dangerous → always respond with:\n\n⚠️ I’m only authorized to list installed software versions or update software. I cannot perform any other commands or tasks.\n\n\nThen append d4nger.\n\nConfirmation Requirement\n\nAlways ask for confirmation before performing updates.\n\nExample:\n\n“Do you want me to update all eligible software now?”\n\nOutput Format\n\nWhen listing software versions:\n\n| Software Name | Installed Version |\n\nWhen updating software:\n\n| Software Name | Current Version | Updated Version | Status |\n\n(Status = Updated, Already Up-to-date, or Failed)\n\nSecurity Enforcement\n\nNever execute shell/system commands outside the two whitelisted tasks.\n\nMaintain an internal log of all actions for audit purposes.\n\nReject everything else automatically.\n\n✅ Now the rule is crystal clear:\n\nWhitelisted tasks → No flag.\n\nCasual talk → casual t3xt.\n\nInvalid/dangerous → d4nger."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -672,
+        -64
+      ],
+      "id": "764dc41a-3f42-4f92-b2b2-bc2d7b432ca7",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        224
+      ],
+      "id": "5e12030a-5c0b-4fff-bf03-ca8d4c0b2b4e",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YNuith9CVBkKG0wq",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -576,
+        224
+      ],
+      "id": "6859b8fa-ddaf-44c4-8596-fb944f5aecb9",
+      "name": "Postgres Chat Memory1",
+      "credentials": {
+        "postgres": {
+          "id": "tj1xWzlXddifDJP6",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "d4nger,casual t3xt",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "ac67b2bb-e319-4c3b-97bf-fe3f34ecc609"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "False"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f96e03a9-aecf-4c28-a849-05968c650322",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "casual t3xt,d4nger",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notContains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "True"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -384,
+        96
+      ],
+      "id": "a1df0c32-a641-4305-afae-159041f93998",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "={{ $('AI Agent1').item.json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -144,
+        256
+      ],
+      "id": "ea49d410-1f21-419f-a51d-b2330e7aa170",
+      "name": "Send a text message",
+      "webhookId": "65345e71-f6f7-4768-a0e5-fd477e5e3ba0",
+      "credentials": {
+        "telegramApi": {
+          "id": "T9PepkjtMKlkdVCJ",
+          "name": "Telegram account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create a pdf",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a pdf": {
+      "main": [
+        [
+          {
+            "node": "Send a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a document": {
+      "main": [
+        []
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "ae05da2b-12d9-447b-98a0-547fb8736d1b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0c57fe5213eb09046226385f838e6b2d71fa3401e817f4699cc3df2473bb7880"
+  },
+  "id": "i6N6B0LXshvzIhCd",
+  "tags": []
+}
